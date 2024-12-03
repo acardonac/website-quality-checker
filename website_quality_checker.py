@@ -331,7 +331,7 @@ if st.button("Export Results"):
 
 # Add reset button at the bottom
 if st.button("Reset All"):
-    # Clear the session state for all user inputs
+    # Reset session state variables manually
     st.session_state.checked_items = {f"{category}_{item}": False for category, items in criteria.items() for item in items}
     st.session_state.notes = ""
     st.session_state.initial_screening = {
@@ -340,8 +340,13 @@ if st.button("Reset All"):
         'high_trust_needed': None
     }
     st.session_state.url_input = ""
-    # Optionally reset ratings
-    st.session_state.current_rating = None
+    # Optionally reset calculated ratings
+    if 'current_rating' in st.session_state:
+        del st.session_state['current_rating']
 
-    # Force rerun of the app to reflect changes
-    st.experimental_rerun()
+    # Reset all checkboxes in the Detailed Evaluation
+    for key in st.session_state.checked_items:
+        st.session_state.checked_items[key] = False
+
+    # Clear input and force a soft refresh
+    st.write("Inputs have been reset. Please refresh the app to see the changes.")
