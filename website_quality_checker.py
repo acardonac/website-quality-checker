@@ -244,6 +244,7 @@ if st.button("Export Results"):
 
 # Add reset button at the bottom
 if st.button("Reset All"):
+    # Reset session state variables
     st.session_state.checked_items = {}
     st.session_state.notes = ""
     st.session_state.initial_screening = {
@@ -251,6 +252,6 @@ if st.button("Reset All"):
         'potential_harm': None,
         'high_trust_needed': None
     }
+    # Optionally reset URL input if needed
     if 'url_input' in st.session_state:
-        del st.session_state.url_input
-    st.experimental_rerun()
+        st.session_state.url_input = ""
