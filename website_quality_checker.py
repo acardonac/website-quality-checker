@@ -211,9 +211,9 @@ with col2:
     with rating_container:
         st.markdown(f"""
         <div style='padding: 20px; border-radius: 10px; background-color: #f0f2f6;'>
-            <h2 style='margin:0;color:#000;'>{indicator} {rating} Quality</h2>
-            <p style='margin:10px 0 0 0;color:#000;'>{checked_count} of {total_items} criteria met</p>
-            <p style='margin:10px 0 0 0;color:#000;'>Score: {(checked_count/total_items*100):.1f}%</p>
+            <h2 style='margin:0;color:#000;font-size:25px;'>{indicator} {rating} Quality</h2>
+            <p style='margin:5px 0 0 0;color:#000;'>{checked_count} of {total_items} criteria met</p>
+            <p style='margin:5px 0 0 0;color:#000;'>Score: {(checked_count/total_items*100):.1f}%</p>
         </div>
         """, unsafe_allow_html=True)
 
