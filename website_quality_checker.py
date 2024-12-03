@@ -229,29 +229,64 @@ with col2:
 
 # Add export results button
 if st.button("Export Results"):
+    # Prepare the results data
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     results = {
         "Evaluation Date": timestamp,
-        "Website URL": url_input if url_input else "Not specified",
+        "Website URL": st.session_state.url_input if 'url_input' in st.session_state else "Not specified",
         "Initial Screening Results": st.session_state.initial_screening,
         "Quality Rating": rating,
-        "Score": f"{(checked_count/total_items*100):.1f}%",
+        "Score": f"{(checked_count / total_items * 100):.1f}%",
         "Criteria Met": f"{checked_count}/{total_items}",
         "Notes": st.session_state.notes,
         "Checked Items": {k: v for k, v in st.session_state.checked_items.items() if v}
     }
-    st.json(results)
+    
+    # Convert results into a text format
+    results_text = f"""
+    Website Quality Checker Results
+    ------------------------------
+    Evaluation Date: {results['Evaluation Date']}
+    Website URL: {results['Website URL']}
+    
+    Initial Screening Results:
+      - Harmful Purpose: {results['Initial Screening Results']['harmful_purpose']}
+      - Potential Harm: {results['Initial Screening Results']['potential_harm']}
+      - High Trust Needed: {results['Initial Screening Results']['high_trust_needed']}
+    
+    Quality Rating: {results['Quality Rating']}
+    Score: {results['Score']}
+    Criteria Met: {results['Criteria Met']}
+    
+    Evaluation Notes:
+    {results['Notes']}
+    
+    Checked Items:
+    {', '.join(results['Checked Items'].keys()) if results['Checked Items'] else "None"}
+    ------------------------------
+    """
+    
+    # Provide the text file for download
+    st.download_button(
+        label="Download Results as .txt",
+        data=results_text,
+        file_name=f"website_quality_results_{timestamp.replace(':', '-').replace(' ', '_')}.txt",
+        mime="text/plain",
+    )
 
 # Add reset button at the bottom
 if st.button("Reset All"):
-    # Reset session state variables
-    st.session_state.checked_items = {}
+    # Clear the session state for all user inputs
+    st.session_state.checked_items = {f"{category}_{item}": False for category, items in criteria.items() for item in items}
     st.session_state.notes = ""
     st.session_state.initial_screening = {
         'harmful_purpose': None,
         'potential_harm': None,
         'high_trust_needed': None
     }
-    # Optionally reset URL input if needed
-    if 'url_input' in st.session_state:
-        st.session_state.url_input = ""
+    st.session_state.url_input = ""
+    # Optionally reset ratings
+    st.session_state.current_rating = None
+
+    # Force rerun of the app to reflect changes
+    st.experimental_rerun()
