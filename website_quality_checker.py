@@ -4,6 +4,9 @@ from urllib.parse import urlparse
 import requests
 from datetime import datetime
 import re
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 def is_valid_url(url):
     try:
@@ -230,41 +233,95 @@ with col2:
 # Add export results button
 if st.button("Export Results"):
     # Prepare the results data
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    results = {
-        "Evaluation Date": timestamp,
-        "Website URL": st.session_state.url_input if 'url_input' in st.session_state else "Not specified",
-        "Initial Screening Results": st.session_state.initial_screening,
-        "Quality Rating": rating,
-        "Score": f"{(checked_count / total_items * 100):.1f}%",
-        "Criteria Met": f"{checked_count}/{total_items}",
-        "Notes": st.session_state.notes,
-        "Checked Items": {k: v for k, v in st.session_state.checked_items.items() if v}
-    }
+    timestamp = datetime.now().strftime("%Y:%M:%S") 
+    results = { "Evaluation Date": 
+                timestamp, "Website URL": st.session_state.url_input 
+                if 'url_input' in st.session_state 
+                else "Not specified", "Initial Screening Results": st.session_state.initial_screening, "Quality Rating": rating, "Score": f"{(checked_count / total_items * 100):.1f}%", "Criteria Met": f"{checked_count}/{total_items}", "Notes": st.session_state.notes, "Checked Items": {k: v for k, v in st.session_state.checked_items.items() if v} }
     
-    # Convert results into a text format
-    results_text = f"""
-    Website Quality Checker Results
-    ------------------------------
-    Evaluation Date: {results['Evaluation Date']}
-    Website URL: {results['Website URL']}
-    
-    Initial Screening Results:
-      - Harmful Purpose: {results['Initial Screening Results']['harmful_purpose']}
-      - Potential Harm: {results['Initial Screening Results']['potential_harm']}
-      - High Trust Needed: {results['Initial Screening Results']['high_trust_needed']}
-    
-    Quality Rating: {results['Quality Rating']}
-    Score: {results['Score']}
-    Criteria Met: {results['Criteria Met']}
-    
-    Evaluation Notes:
-    {results['Notes']}
-    
-    Checked Items:
-    {', '.join(results['Checked Items'].keys()) if results['Checked Items'] else "None"}
-    ------------------------------
-    """
+    # Convert results into a text format for .txt download
+results_text = f"""
+Website Quality Checker Results
+------------------------------
+Evaluation Date: {results['Evaluation Date']}
+Website URL: {results['Website URL']}
+
+Initial Screening Results:
+  - Harmful Purpose: {results['Initial Screening Results']['harmful_purpose']}
+  - Potential Harm: {results['Initial Screening Results']['potential_harm']}
+  - High Trust Needed: {results['Initial Screening Results']['high_trust_needed']}
+
+Quality Rating: {results['Quality Rating']}
+Score: {results['Score']}
+Criteria Met: {results['Criteria Met']}
+
+Evaluation Notes:
+{results['Notes']}
+
+Checked Items:
+{', '.join(results['Checked Items'].keys()) if results['Checked Items'] else "None"}
+------------------------------
+"""
+
+# Function to generate PDF
+def generate_pdf(results):
+    pdf_buffer = BytesIO()
+    pdf = canvas.Canvas(pdf_buffer, pagesize=letter)
+    pdf.setFont("Helvetica", 12)
+
+    # Write content to PDF
+    pdf.drawString(30, 750, "Website Quality Checker Results")
+    pdf.drawString(30, 735, "-" * 50)
+    pdf.drawString(30, 720, f"Evaluation Date: {results['Evaluation Date']}")
+    pdf.drawString(30, 705, f"Website URL: {results['Website URL']}")
+
+    pdf.drawString(30, 680, "Initial Screening Results:")
+    pdf.drawString(50, 665, f"- Harmful Purpose: {results['Initial Screening Results']['harmful_purpose']}")
+    pdf.drawString(50, 650, f"- Potential Harm: {results['Initial Screening Results']['potential_harm']}")
+    pdf.drawString(50, 635, f"- High Trust Needed: {results['Initial Screening Results']['high_trust_needed']}")
+
+    pdf.drawString(30, 610, f"Quality Rating: {results['Quality Rating']}")
+    pdf.drawString(30, 595, f"Score: {results['Score']}")
+    pdf.drawString(30, 580, f"Criteria Met: {results['Criteria Met']}")
+
+    pdf.drawString(30, 555, "Evaluation Notes:")
+    pdf.drawString(50, 540, results["Notes"] if results["Notes"] else "None")
+
+    pdf.drawString(30, 515, "Checked Items:")
+    if results["Checked Items"]:
+        y = 500
+        for item in results["Checked Items"].keys():
+            pdf.drawString(50, y, f"- {item}")
+            y -= 15
+            if y < 50:  # Add a new page if space runs out
+                pdf.showPage()
+                pdf.setFont("Helvetica", 12)
+                y = 750
+    else:
+        pdf.drawString(50, 500, "None")
+
+    # Finalize and save PDF
+    pdf.save()
+    pdf_buffer.seek(0)
+    return pdf_buffer
+
+# Generate the PDF
+pdf_file = generate_pdf(results)
+
+# Provide the options to download the results
+st.download_button(
+    label="Download Results as .txt",
+    data=results_text,
+    file_name=f"website_quality_results_{timestamp.replace(':', '-').replace(' ', '_')}.txt",
+    mime="text/plain",
+)
+
+st.download_button(
+    label="Download Results as PDF",
+    data=pdf_file,
+    file_name=f"website_quality_results_{timestamp.replace(':', '-').replace(' ', '_')}.pdf",
+    mime="application/pdf",
+)
     
     # Provide the text file for download
     st.download_button(
